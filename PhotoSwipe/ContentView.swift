@@ -19,43 +19,68 @@ struct ContentView: View {
     
     var body: some View {
         VStack {
-            if let displayImage {
-                Image(uiImage: displayImage)
-                    .offset(dragOffset)
-                    .gesture(
-                        DragGesture()
-                            .onChanged {
-                                value in dragOffset = value.translation
-                                // print(value.translation)
-                            }
-                            .onEnded {
-                                value in // naming the closure's incoming parameter
-                                if value.translation.width >= 150 {
-                                    nextImage()
-                                    dragOffset = CGSize.zero
-                                } else if value.translation.width <= -150 {
-                                    discardArray.append(images[currentIndex])
-                                    nextImage()
-                                    dragOffset = CGSize.zero
-                                } else {
-                                    dragOffset = CGSize.zero }
-                            }
-                    )
-            } else {
-                Image(systemName: "photo")
-                    .imageScale(.large)
-                    .foregroundStyle(.tint)
-            }
             Text("Hello! You have \(imagesAmount) photos on your device.")
                 .padding()
+                .font(.system(size: 34, weight: .black, design: .serif))
+                //.foregroundColor(Color(red: 0.968, green: 0.968, blue: 0.968))
+            
+            if currentIndex < imagesAmount {
+                if let displayImage {
+                    Image(uiImage: displayImage)
+                        .offset(dragOffset)
+                        .gesture(
+                            DragGesture()
+                                .onChanged {
+                                    value in dragOffset = value.translation
+                                    // print(value.translation)
+                                }
+                                .onEnded {
+                                    value in // naming the closure's incoming parameter
+                                    if value.translation.width >= 150 {
+                                        nextImage()
+                                        dragOffset = CGSize.zero
+                                    } else if value.translation.width <= -150 {
+                                        discardArray.append(images[currentIndex])
+                                        nextImage()
+                                        dragOffset = CGSize.zero
+                                    } else {
+                                        dragOffset = CGSize.zero }
+                                }
+                        )
+                        .aspectRatio(contentMode: .fill)
+                    
+                    Text("Photo \(currentIndex + 1) of \(imagesAmount)")
+                        .padding()
+                        .font(.system(size: 20, weight: .black, design: .serif))
+                } else {
+                    Image(systemName: "photo")
+                        .imageScale(.large)
+                        .foregroundStyle(.tint)
+                }
+            } else {
+                Image(systemName: "sparkle")
+                    .imageScale(.large)
+                    .foregroundStyle(.tint)
+                Text("All Clean!")
+                    .padding()
+                    .font(.system(size: 20, weight: .black, design: .serif))
+            }
             
             Text("You are going to delete \(discardArray.count) photos.")
                 .padding()
             
-            Button("Next", action: nextImage)
+            Button("Delete Photos", action: deletePhotos)
+                .buttonStyle(.glass)
         }
         .onAppear {
             requestPhotoAccessAndCount()
+        }
+    }
+    
+    // function that will delete the discardArray when prompted button
+    private func deletePhotos() {
+        PHPhotoLibrary.shared().performChanges {
+            PHAssetChangeRequest.deleteAssets(discardArray as NSFastEnumeration)
         }
     }
     
@@ -84,7 +109,7 @@ struct ContentView: View {
     
     private func loadImage(from asset: PHAsset) {
         // TODO: grab a single image and display it on the screen!
-        PHImageManager.default().requestImage(for:asset, targetSize: CGSize(width: 500, height: 500), contentMode: .aspectFit, options: nil, resultHandler: { image, info in
+        PHImageManager.default().requestImage(for:asset, targetSize: CGSize(width: 350, height: 450), contentMode: .aspectFit, options: nil, resultHandler: { image, info in
             if let unwrappedImage = image {
                 DispatchQueue.main.async {
                     displayImage = unwrappedImage
@@ -94,6 +119,7 @@ struct ContentView: View {
     
     private func nextImage() {
         if currentIndex >= imagesAmount - 1 {
+            currentIndex += 1
             return
         }
         currentIndex += 1
